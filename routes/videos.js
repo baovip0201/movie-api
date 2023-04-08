@@ -3,7 +3,11 @@ const router = express.Router()
 const mongoose = require('mongoose');
 const multer = require('multer');
 const videoSchema = require("../models/video-schema")
+const bodyParser = require("body-parser")
 const checkAuth = require("../middleware/check-auth")
+const fs = require('fs')
+
+router.use(bodyParser.json())
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -61,17 +65,17 @@ router.get('/getvideo', async (req, res) => {
   //console.log(id)
   try {
     videoSchema.find({ genres: genre })
-    .then((data) => {
-      res.status(200).send(data)
-    })
-    .catch(err => console.error(err))
+      .then((data) => {
+        res.status(200).send(data)
+      })
+      .catch(err => console.error(err))
   } catch (error) {
     console.error(error);
     res.status(500).send('Internal server error');
   }
 })
 
-router.patch('/update', async (req, res) => {
+router.patch('/update',checkAuth, async (req, res) => {
   const id = req.query.id
   const { videoName, genres } = req.body
   try {
@@ -97,14 +101,31 @@ router.patch('/update', async (req, res) => {
   }
 })
 
-router.delete('/delete', async (req, res)=>{
-  const id= req.query.id
+router.delete('/delete',checkAuth, async (req, res) => {
+  const id = req.query.id
   try {
-    await videoSchema.findOneAndDelete({_id: id})
-    .then((result)=>{
-      if(result) return res.status(200).send({message: "Đã xóa"})
-      else return res.status(401).send({message: "Có lỗi xảy ra"})
-    })
+    await videoSchema.findOne({ _id: id })
+      .then(async (data) => {
+        if (data) {
+          const filePath = data.videoUrl
+          await videoSchema.deleteOne({ _id: id })
+          .then((result)=>{
+            if (result) {
+              fs.unlink(filePath, (err => {
+                if (err) {
+                  console.error(err)
+                }
+                console.log('File deleted successfully');
+              }))
+              return res.status(200).send({ message: "Đã xóa" })
+            }
+          })
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        res.status(500).send('Internal server error');
+      })
   } catch (error) {
     console.error(error);
     res.status(500).send('Internal server error');
