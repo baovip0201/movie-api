@@ -6,7 +6,7 @@ const userRouter=require("./routes/user")
 const {connectDb}=require("./config/database")
 require('dotenv').config()
 
-connectDb()
+//connectDb()
 
 app.use('/videos', videoRouter)
 app.use('/', userRouter)

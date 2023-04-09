@@ -39,6 +39,13 @@ router.post('/', checkAuth, upload.single('video'), async (req, res) => {
   }
 });
 
+router.get('/', async(req, res)=>{
+  return res.status(200).send({
+    title: "Express Testing",
+    message: "The app is working properly!",
+  });
+})
+
 router.get('/getall', async (req, res) => {
   try {
     videoSchema.find().then((data) => {
